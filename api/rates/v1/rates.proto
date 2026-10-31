@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package rates.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "grinex-adapter-service/gen/rates/v1;ratesv1";
+
+service RatesService {
+  rpc GetRates(GetRatesRequest) returns (GetRatesResponse);
+}
+
+enum CALCMETHOD{
+  CALCMETHOD_UNSPECIFIED = 0;
+  CALCMETHOD_TOP_N = 1;
+  CALCMETHOD_AVG_NM = 2;
+}
+
+message GetRatesRequest {
+  CALCMETHOD calc_method = 1;
+  uint32 n = 2;
+  uint32 m = 3;
+}
+
+message GetRatesResponse {
+  double ask = 1;
+  double bit = 2;
+  google.protobuf.Timestamp fetched_at = 3;
+}

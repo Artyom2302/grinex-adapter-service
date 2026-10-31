@@ -1,0 +1,8 @@
+# IDE
+.idea/
+
+# no-vibe tutor workspace
+.no-vibe/
+
+# build output
+/bin/
