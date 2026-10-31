@@ -134,7 +134,7 @@ func (x *GetRatesRequest) GetM() uint32 {
 type GetRatesResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Ask           float64                `protobuf:"fixed64,1,opt,name=ask,proto3" json:"ask,omitempty"`
-	Bit           float64                `protobuf:"fixed64,2,opt,name=bit,proto3" json:"bit,omitempty"`
+	Bid           float64                `protobuf:"fixed64,2,opt,name=bid,proto3" json:"bid,omitempty"`
 	FetchedAt     *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=fetched_at,json=fetchedAt,proto3" json:"fetched_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -177,9 +177,9 @@ func (x *GetRatesResponse) GetAsk() float64 {
 	return 0
 }
 
-func (x *GetRatesResponse) GetBit() float64 {
+func (x *GetRatesResponse) GetBid() float64 {
 	if x != nil {
-		return x.Bit
+		return x.Bid
 	}
 	return 0
 }
@@ -203,7 +203,7 @@ const file_rates_v1_rates_proto_rawDesc = "" +
 	"\x01m\x18\x03 \x01(\rR\x01m\"q\n" +
 	"\x10GetRatesResponse\x12\x10\n" +
 	"\x03ask\x18\x01 \x01(\x01R\x03ask\x12\x10\n" +
-	"\x03bit\x18\x02 \x01(\x01R\x03bit\x129\n" +
+	"\x03bid\x18\x02 \x01(\x01R\x03bid\x129\n" +
 	"\n" +
 	"fetched_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\tfetchedAt*U\n" +
 	"\n" +

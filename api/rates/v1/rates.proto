@@ -24,6 +24,6 @@ message GetRatesRequest {
 
 message GetRatesResponse {
   double ask = 1;
-  double bit = 2;
+  double bid = 2;
   google.protobuf.Timestamp fetched_at = 3;
 }
