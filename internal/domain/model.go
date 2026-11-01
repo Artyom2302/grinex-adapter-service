@@ -18,7 +18,9 @@ const (
 type CalcMethod int
 
 type Rate struct {
-	Ask       decimal.Decimal
-	Bid       decimal.Decimal
-	FetchedAt time.Time
+	Ask        decimal.Decimal
+	Bid        decimal.Decimal
+	FetchedAt  time.Time
+	CalcMethod CalcMethod
+	N, M       int
 }

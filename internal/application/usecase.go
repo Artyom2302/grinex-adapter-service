@@ -74,9 +74,12 @@ func (s *RatesService) GetRates(ctx context.Context, q GetRatesQuery) (domain.Ra
 	}
 
 	rate := domain.Rate{
-		Ask:       ask,
-		Bid:       bid,
-		FetchedAt: s.now(),
+		Ask:        ask,
+		Bid:        bid,
+		FetchedAt:  s.now(),
+		CalcMethod: q.Method,
+		N:          q.N,
+		M:          q.M,
 	}
 
 	if err := s.repo.Save(ctx, rate); err != nil {

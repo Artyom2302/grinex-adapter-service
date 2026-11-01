@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"grinex-adapter-service/internal/adapter/storage/postgres"
 	"log"
 	"net"
 	"time"
@@ -15,8 +17,25 @@ import (
 	"grinex-adapter-service/internal/application"
 )
 
+const dsn = "postgres://rates:rates@localhost:5432/rates?sslmode=disable"
+
 func main() {
-	svc := application.NewRatesService(stubExchange{}, noopRepo{}, time.Now)
+	ctx := context.Background()
+
+	pool, err := postgres.NewPool(ctx, dsn)
+	if err != nil {
+		log.Fatal("failed to connect to postgres:", err)
+	}
+	defer pool.Close()
+
+	applied, err := postgres.Migrate(ctx, pool)
+	if err != nil {
+		log.Fatalf("migrate: %v", err)
+	}
+	log.Printf("migrations applied: %v", applied)
+
+	repo := postgres.NewRatesRepository(pool)
+	svc := application.NewRatesService(stubExchange{}, repo, time.Now)
 
 	grpcServer := grpc.NewServer()
 	healthcheck := health.NewServer()
