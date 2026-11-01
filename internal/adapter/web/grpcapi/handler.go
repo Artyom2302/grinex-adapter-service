@@ -7,6 +7,7 @@ import (
 	"grinex-adapter-service/internal/application"
 	"grinex-adapter-service/internal/domain"
 
+	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -20,10 +21,11 @@ type RatesGetter interface {
 
 type GrpcHandler struct {
 	ratesv1.UnimplementedRatesServiceServer
-	rates RatesGetter
+	rates  RatesGetter
+	logger *zap.Logger
 }
 
-func NewGrpcHandler(rates RatesGetter) *GrpcHandler {
+func NewGrpcHandler(rates RatesGetter, logger *zap.Logger) *GrpcHandler {
 	return &GrpcHandler{rates: rates}
 }
 
@@ -34,7 +36,7 @@ func (h *GrpcHandler) GetRates(ctx context.Context, req *ratesv1.GetRatesRequest
 		M:      int(req.GetM()),
 	})
 	if err != nil {
-		return nil, toStatus(err)
+		return nil, h.toStatus(err)
 	}
 
 	return &ratesv1.GetRatesResponse{
@@ -56,14 +58,14 @@ func toDomainMethod(m ratesv1.CALCMETHOD) domain.CalcMethod {
 	}
 }
 
-// toStatus maps application/domain errors to gRPC status errors.
-func toStatus(err error) error {
+func (h *GrpcHandler) toStatus(err error) error {
 	switch {
 	case errors.Is(err, domain.ErrUnknownMethod) || errors.Is(err, domain.ErrOutOfRange) || errors.Is(err, domain.ErrInvalidRange) || errors.Is(err, domain.ErrInvalidRange):
 		return status.Error(codes.InvalidArgument, err.Error())
 	case errors.Is(err, domain.ErrEmptyLevels):
 		return status.Error(codes.Unavailable, err.Error())
 	default:
+		h.logger.Error("get rates failed", zap.Error(err))
 		return status.Error(codes.Internal, "internal error")
 	}
 }
