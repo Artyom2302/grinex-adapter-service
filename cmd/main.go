@@ -2,40 +2,49 @@ package main
 
 import (
 	"context"
+	"fmt"
+	ratesv1 "grinex-adapter-service/gen/rates/v1"
 	"grinex-adapter-service/internal/adapter/storage/postgres"
+	"grinex-adapter-service/internal/adapter/web/grpcapi"
 	"grinex-adapter-service/internal/adapter/web/rest/grinex"
+	"grinex-adapter-service/internal/application"
 	"grinex-adapter-service/internal/config"
 	"log"
 	"net"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	healthgrpc "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
-
-	ratesv1 "grinex-adapter-service/gen/rates/v1"
-	"grinex-adapter-service/internal/adapter/web/grpcapi"
-	"grinex-adapter-service/internal/application"
 )
 
 func main() {
-	ctx := context.Background()
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func run() error {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 	cfg, err := config.Load(os.Args[1:])
 	if err != nil {
-		log.Fatal("config error: ", err)
+		return fmt.Errorf("config error: %w", err)
 	}
 
 	pool, err := postgres.NewPool(ctx, cfg.DSN)
 	if err != nil {
-		log.Fatal("failed to connect to postgres:", err)
+		return fmt.Errorf("failed to connect to postgres: %w", err)
 	}
 	defer pool.Close()
 
 	applied, err := postgres.Migrate(ctx, pool)
 	if err != nil {
-		log.Fatalf("migrate: %v", err)
+		return fmt.Errorf("migrate: %w", err)
 	}
 	log.Printf("migrations applied: %v", applied)
 
@@ -58,11 +67,27 @@ func main() {
 
 	lis, err := net.Listen("tcp", cfg.GRPCAddr)
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		return fmt.Errorf("failed to listen: %w", err)
 	}
 
-	log.Printf("grpc server listening at %v", lis.Addr())
-	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatalf("grpc server stopped: %v", err)
+	serveErr := make(chan error, 1)
+	go func() {
+		log.Printf("grpc server listening at %v", lis.Addr())
+		serveErr <- grpcServer.Serve(lis)
+	}()
+	select {
+	case err := <-serveErr:
+		log.Printf("serve error: %v", err)
+		return fmt.Errorf("serve error: %w", err)
+	case <-ctx.Done():
+		log.Printf("shutdown signal received")
 	}
+	healthcheck.Shutdown()
+	timer := time.AfterFunc(cfg.AppTimeout, func() {
+		grpcServer.Stop()
+	})
+	defer timer.Stop()
+	grpcServer.GracefulStop()
+	log.Printf("server stopped")
+	return nil
 }

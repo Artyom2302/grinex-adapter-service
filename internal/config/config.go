@@ -9,10 +9,10 @@ import (
 )
 
 type Config struct {
-	GRPCAddr string `env:"GRPC_ADDR" env-default:":50051"`
-	DSN      string `env:"DATABASE_DSN" env-default:"postgres://rates:rates@localhost:5432/rates?sslmode=disable"`
-
-	Grinex GrinexConfig
+	GRPCAddr   string        `env:"GRPC_ADDR" env-default:":50051"`
+	DSN        string        `env:"DATABASE_DSN" env-default:"postgres://rates:rates@localhost:5432/rates?sslmode=disable"`
+	AppTimeout time.Duration `env:"APP_TIMEOUT" env-default:"10s"`
+	Grinex     GrinexConfig
 }
 
 // GrinexConfig holds exchange client settings.
@@ -34,6 +34,7 @@ func Load(args []string) (Config, error) {
 	fs.StringVar(&cfg.DSN, "dsn", cfg.DSN, "")
 	fs.StringVar(&cfg.Grinex.BaseURL, "grinex-url", cfg.Grinex.BaseURL, "")
 	fs.DurationVar(&cfg.Grinex.Timeout, "grinex-timeout", cfg.Grinex.Timeout, "")
+	fs.DurationVar(&cfg.AppTimeout, "app-timeout", cfg.AppTimeout, "")
 	if err := fs.Parse(args); err != nil {
 		return Config{}, fmt.Errorf("parse config: %w", err)
 	}
