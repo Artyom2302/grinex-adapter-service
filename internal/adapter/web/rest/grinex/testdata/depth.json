@@ -1,0 +1,13 @@
+{
+  "timestamp": 1761908662,
+  "asks": [
+    {"price": "80.20", "volume": "12000.0", "amount": "962400.0", "factor": "0.01", "type": "limit"},
+    {"price": "80.15", "volume": "3000.0",  "amount": "240450.0", "factor": "0.01", "type": "limit"},
+    {"price": "80.30", "volume": "5000.0",  "amount": "401500.0", "factor": "0.01", "type": "limit"}
+  ],
+  "bids": [
+    {"price": "80.05", "volume": "7000.0",  "amount": "560350.0", "factor": "0.01", "type": "limit"},
+    {"price": "79.90", "volume": "4000.0",  "amount": "319600.0", "factor": "0.01", "type": "limit"},
+    {"price": "80.00", "volume": "20000.0", "amount": "1600000.0","factor": "0.01", "type": "limit"}
+  ]
+}
