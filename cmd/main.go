@@ -3,8 +3,11 @@ package main
 import (
 	"context"
 	"grinex-adapter-service/internal/adapter/storage/postgres"
+	"grinex-adapter-service/internal/adapter/web/rest/grinex"
+	"grinex-adapter-service/internal/config"
 	"log"
 	"net"
+	"os"
 	"time"
 
 	"google.golang.org/grpc"
@@ -17,12 +20,14 @@ import (
 	"grinex-adapter-service/internal/application"
 )
 
-const dsn = "postgres://rates:rates@localhost:5432/rates?sslmode=disable"
-
 func main() {
 	ctx := context.Background()
+	cfg, err := config.Load(os.Args[1:])
+	if err != nil {
+		log.Fatal("config error: ", err)
+	}
 
-	pool, err := postgres.NewPool(ctx, dsn)
+	pool, err := postgres.NewPool(ctx, cfg.DSN)
 	if err != nil {
 		log.Fatal("failed to connect to postgres:", err)
 	}
@@ -35,7 +40,15 @@ func main() {
 	log.Printf("migrations applied: %v", applied)
 
 	repo := postgres.NewRatesRepository(pool)
-	svc := application.NewRatesService(stubExchange{}, repo, time.Now)
+	var exchange application.ExchangeClient
+	if cfg.Grinex.UseStub {
+		log.Printf("using stub exchange")
+		exchange = stubExchange{}
+	} else {
+		exchange = grinex.NewClient(cfg.Grinex.BaseURL, cfg.Grinex.Market, cfg.Grinex.Timeout)
+	}
+
+	svc := application.NewRatesService(exchange, repo, time.Now)
 
 	grpcServer := grpc.NewServer()
 	healthcheck := health.NewServer()
@@ -43,7 +56,7 @@ func main() {
 	ratesv1.RegisterRatesServiceServer(grpcServer, grpcapi.NewGrpcHandler(svc))
 	reflection.Register(grpcServer)
 
-	lis, err := net.Listen("tcp", ":50051")
+	lis, err := net.Listen("tcp", cfg.GRPCAddr)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
