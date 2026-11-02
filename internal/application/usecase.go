@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"grinex-adapter-service/internal/domain"
 	"time"
@@ -14,6 +15,7 @@ import (
 )
 
 var tracer = otel.Tracer("grinex-adapter-service/internal/application")
+var ErrExchangeUnavailable = errors.New("exchange unavailable")
 
 // ExchangeClient fetches the current order book from an exchange.
 type ExchangeClient interface {

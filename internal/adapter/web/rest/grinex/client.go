@@ -59,22 +59,22 @@ func (c *Client) GetOrderBook(ctx context.Context) (domain.OrderBook, error) {
 		SetResult(&body).
 		Get(depthPath)
 	if err != nil {
-		return domain.OrderBook{}, fmt.Errorf("request depth: %w", err)
+		return domain.OrderBook{}, fmt.Errorf("%w: request depth: %w", application.ErrExchangeUnavailable, err)
 	}
 	if resp.IsError() {
-		return domain.OrderBook{}, fmt.Errorf("%w: %d", ErrUnexpectedStatus, resp.StatusCode())
+		return domain.OrderBook{}, fmt.Errorf("%w: %w: %d", application.ErrExchangeUnavailable, ErrUnexpectedStatus, resp.StatusCode())
 	}
 	if ct := resp.Header().Get("Content-Type"); !strings.Contains(ct, "application/json") {
-		return domain.OrderBook{}, fmt.Errorf("%w: %q", ErrUnexpectedContent, ct)
+		return domain.OrderBook{}, fmt.Errorf("%w: %w: %q", application.ErrExchangeUnavailable, ErrUnexpectedContent, ct)
 	}
 
 	asks, err := toLevels(body.Asks)
 	if err != nil {
-		return domain.OrderBook{}, fmt.Errorf("parse asks: %w", err)
+		return domain.OrderBook{}, fmt.Errorf("%w: parse asks: %w", application.ErrExchangeUnavailable, err)
 	}
 	bids, err := toLevels(body.Bids)
 	if err != nil {
-		return domain.OrderBook{}, fmt.Errorf("parse bids: %w", err)
+		return domain.OrderBook{}, fmt.Errorf("%w: parse bids: %w", application.ErrExchangeUnavailable, err)
 	}
 
 	slices.SortFunc(asks, func(a, b domain.Level) int { return a.Price.Compare(b.Price) })

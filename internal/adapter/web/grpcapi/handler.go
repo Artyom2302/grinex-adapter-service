@@ -64,6 +64,9 @@ func (h *GrpcHandler) toStatus(err error) error {
 		return status.Error(codes.InvalidArgument, err.Error())
 	case errors.Is(err, domain.ErrEmptyLevels):
 		return status.Error(codes.Unavailable, err.Error())
+	case errors.Is(err, application.ErrExchangeUnavailable):
+		h.logger.Warn("exchange unavailable", zap.Error(err))
+		return status.Error(codes.Unavailable, "exchange unavailable")
 	default:
 		h.logger.Error("get rates failed", zap.Error(err))
 		return status.Error(codes.Internal, "internal error")
