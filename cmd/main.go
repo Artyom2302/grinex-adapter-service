@@ -2,15 +2,19 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"grinex-adapter-service/internal/telemetry"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -24,6 +28,8 @@ import (
 	"grinex-adapter-service/internal/adapter/web/rest/grinex"
 	"grinex-adapter-service/internal/application"
 	"grinex-adapter-service/internal/config"
+	"grinex-adapter-service/internal/metrics"
+	"grinex-adapter-service/internal/telemetry"
 )
 
 func main() {
@@ -59,6 +65,13 @@ func run() error {
 		}
 	}()
 
+	reg := prometheus.NewRegistry()
+	reg.MustRegister(
+		collectors.NewGoCollector(),
+		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
+	)
+	m := metrics.New(reg)
+
 	pool, err := postgres.NewPool(ctx, cfg.DSN)
 	if err != nil {
 		return fmt.Errorf("connect to postgres: %w", err)
@@ -78,13 +91,17 @@ func run() error {
 	} else {
 		exchange = grinex.NewClient(cfg.Grinex.BaseURL, cfg.Grinex.Market, cfg.Grinex.Timeout)
 	}
+	exchange = metrics.NewInstrumentedExchange(exchange, m)
 
 	repo := postgres.NewRatesRepository(pool)
 	svc := application.NewRatesService(exchange, repo, time.Now)
 
 	grpcServer := grpc.NewServer(
 		grpc.StatsHandler(otelgrpc.NewServerHandler()),
-		grpc.ChainUnaryInterceptor(grpcapi.LoggingInterceptor(logger)),
+		grpc.ChainUnaryInterceptor(
+			grpcapi.MetricsInterceptor(m),
+			grpcapi.LoggingInterceptor(logger),
+		),
 	)
 	healthcheck := health.NewServer()
 	healthgrpc.RegisterHealthServer(grpcServer, healthcheck)
@@ -96,10 +113,22 @@ func run() error {
 		return fmt.Errorf("listen %s: %w", cfg.GRPCAddr, err)
 	}
 
-	serveErr := make(chan error, 1)
+	metricsSrv := &http.Server{
+		Addr:              cfg.MetricsAddr,
+		Handler:           promhttp.HandlerFor(reg, promhttp.HandlerOpts{}),
+		ReadHeaderTimeout: 5 * time.Second,
+	}
+
+	serveErr := make(chan error, 2)
 	go func() {
 		logger.Info("grpc server listening", zap.String("addr", lis.Addr().String()))
 		serveErr <- grpcServer.Serve(lis)
+	}()
+	go func() {
+		logger.Info("metrics server listening", zap.String("addr", cfg.MetricsAddr))
+		if err := metricsSrv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			serveErr <- fmt.Errorf("metrics server: %w", err)
+		}
 	}()
 
 	select {
@@ -116,6 +145,12 @@ func run() error {
 	})
 	defer timer.Stop()
 	grpcServer.GracefulStop()
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := metricsSrv.Shutdown(shutdownCtx); err != nil {
+		logger.Warn("metrics server shutdown failed", zap.Error(err))
+	}
 
 	logger.Info("server stopped")
 	return nil

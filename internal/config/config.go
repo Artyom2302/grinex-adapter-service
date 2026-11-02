@@ -14,6 +14,7 @@ type Config struct {
 	AppTimeout   time.Duration `env:"APP_TIMEOUT" env-default:"10s"`
 	Grinex       GrinexConfig
 	OTLPEndpoint string `env:"OTEL_EXPORTER_OTLP_ENDPOINT" env-default:"localhost:4317"`
+	MetricsAddr  string `env:"METRICS_ADDR" env-default:":9090"`
 }
 
 // GrinexConfig holds exchange client settings.
@@ -36,6 +37,8 @@ func Load(args []string) (Config, error) {
 	fs.StringVar(&cfg.Grinex.BaseURL, "grinex-url", cfg.Grinex.BaseURL, "")
 	fs.DurationVar(&cfg.Grinex.Timeout, "grinex-timeout", cfg.Grinex.Timeout, "")
 	fs.DurationVar(&cfg.AppTimeout, "app-timeout", cfg.AppTimeout, "")
+	fs.StringVar(&cfg.MetricsAddr, "metrics-addr", cfg.MetricsAddr, "address of the Prometheus /metrics HTTP server")
+
 	if err := fs.Parse(args); err != nil {
 		return Config{}, fmt.Errorf("parse config: %w", err)
 	}

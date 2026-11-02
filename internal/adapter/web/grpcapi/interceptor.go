@@ -2,6 +2,7 @@ package grpcapi
 
 import (
 	"context"
+	"grinex-adapter-service/internal/metrics"
 	"time"
 
 	"go.uber.org/zap"
@@ -16,6 +17,18 @@ func LoggingInterceptor(logger *zap.Logger) grpc.UnaryServerInterceptor {
 
 		code := status.Code(err)
 		logger.Info("grpc request", zap.String("method", info.FullMethod), zap.String("code", code.String()), zap.Duration("duration", time.Since(start)))
+		return resp, err
+	}
+}
+
+func MetricsInterceptor(m *metrics.Metrics) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+		start := time.Now()
+		resp, err := handler(ctx, req)
+
+		m.GRPCRequests.WithLabelValues(info.FullMethod, status.Code(err).String()).Inc()
+		m.GRPCDuration.WithLabelValues(info.FullMethod).Observe(time.Since(start).Seconds())
+
 		return resp, err
 	}
 }
