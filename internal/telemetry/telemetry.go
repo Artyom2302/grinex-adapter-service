@@ -1,3 +1,4 @@
+// Package telemetry sets up OpenTelemetry tracing.
 package telemetry
 
 import (
@@ -12,6 +13,7 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
+// InitTracer installs a global TracerProvider exporting to endpoint over OTLP gRPC and returns its shutdown func.
 func InitTracer(ctx context.Context, serviceName, endpoint string) (func(context.Context) error, error) {
 	exporter, err := otlptracegrpc.New(ctx,
 		otlptracegrpc.WithEndpoint(endpoint),

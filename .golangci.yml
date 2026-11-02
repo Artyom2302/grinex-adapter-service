@@ -1,0 +1,19 @@
+version: "2"
+
+linters:
+  default: standard     # errcheck, govet, ineffassign, staticcheck, unused
+  enable:
+    - errorlint         # errors.Is/As вместо == и type switch
+    - gosec             # безопасность: таймауты http.Server, и т.п.
+    - misspell          # опечатки в комментариях
+    - noctx             # HTTP-запросы без context
+    - bodyclose         # незакрытые resp.Body
+    - revive            # стиль: комментарии к экспортируемым именам и т.д.
+  exclusions:
+    paths:
+      - gen             # сгенерированный код не линтим
+
+formatters:
+  enable:
+    - gofmt
+    - goimports

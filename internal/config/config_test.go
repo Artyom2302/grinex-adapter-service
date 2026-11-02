@@ -3,6 +3,7 @@ package config
 import "testing"
 
 func TestLoad_Priority(t *testing.T) {
+	//nolint:gosec // local docker default, not a secret.
 	const def = "postgres://rates:rates@localhost:5432/rates?sslmode=disable"
 
 	tests := []struct {

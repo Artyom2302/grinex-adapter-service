@@ -1,3 +1,4 @@
+// Package domain holds rate types and calculation rules.
 package domain
 
 import (
@@ -7,16 +8,20 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+// ErrUnknownMethod is returned for an unsupported calculation method.
 var ErrUnknownMethod = errors.New("unknown calculation method")
 
+// Calculation methods.
 const (
-	NO_SPECIFIED CalcMethod = iota
-	TOP_N
-	AVG_NM
+	MethodUnspecified CalcMethod = iota
+	MethodTopN
+	MethodAvgNM
 )
 
-type CalcMethod int
+// CalcMethod selects how ask/bid are calculated from the order book.
+type CalcMethod int16
 
+// Rate is a calculated ask/bid pair.
 type Rate struct {
 	Ask        decimal.Decimal
 	Bid        decimal.Decimal

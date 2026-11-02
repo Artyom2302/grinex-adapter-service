@@ -11,7 +11,7 @@ import (
 // stubExchange returns a fixed order book until the Grinex adapter exists (layer 4).
 type stubExchange struct{}
 
-func (stubExchange) GetOrderBook(ctx context.Context) (domain.OrderBook, error) {
+func (stubExchange) GetOrderBook(_ context.Context) (domain.OrderBook, error) {
 	lvl := func(price string) domain.Level {
 		return domain.Level{Price: decimal.RequireFromString(price), Volume: decimal.NewFromInt(1000)}
 	}
@@ -20,8 +20,3 @@ func (stubExchange) GetOrderBook(ctx context.Context) (domain.OrderBook, error) 
 		Bids: []domain.Level{lvl("80.05"), lvl("80.00"), lvl("79.90")},
 	}, nil
 }
-
-// noopRepo discards rates until the Postgres adapter exists (layer 5).
-type noopRepo struct{}
-
-func (noopRepo) Save(ctx context.Context, rate domain.Rate) error { return nil }

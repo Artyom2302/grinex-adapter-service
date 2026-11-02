@@ -10,6 +10,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// LoggingInterceptor logs method, status code and duration of each unary call.
 func LoggingInterceptor(logger *zap.Logger) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		start := time.Now()
@@ -21,6 +22,7 @@ func LoggingInterceptor(logger *zap.Logger) grpc.UnaryServerInterceptor {
 	}
 }
 
+// MetricsInterceptor records request count and latency of each unary call.
 func MetricsInterceptor(m *metrics.Metrics) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		start := time.Now()

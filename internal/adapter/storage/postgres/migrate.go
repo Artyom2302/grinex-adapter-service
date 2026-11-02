@@ -1,3 +1,4 @@
+// Package postgres implements rate storage on PostgreSQL.
 package postgres
 
 import (
@@ -11,9 +12,12 @@ import (
 	"grinex-adapter-service/migrations"
 )
 
+// Migrate applies embedded goose migrations and returns the applied file paths.
 func Migrate(ctx context.Context, pool *pgxpool.Pool) ([]string, error) {
 	db := stdlib.OpenDBFromPool(pool)
-	defer db.Close()
+	defer func() {
+		_ = db.Close()
+	}()
 
 	provider, err := goose.NewProvider(goose.DialectPostgres, db, migrations.Migrations)
 	if err != nil {

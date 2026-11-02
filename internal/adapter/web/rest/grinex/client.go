@@ -1,3 +1,4 @@
+// Package grinex implements an HTTP client for the Grinex exchange.
 package grinex
 
 import (
@@ -27,11 +28,13 @@ const depthPath = "/api/v2/depth"
 
 var _ application.ExchangeClient = (*Client)(nil)
 
+// Client fetches the order book from the Grinex REST API.
 type Client struct {
 	http   *resty.Client
 	market string
 }
 
+// NewClient creates a Client for market with the given request timeout.
 func NewClient(baseURL, market string, timeout time.Duration) *Client {
 	return &Client{
 		http:   resty.New().SetBaseURL(baseURL).SetTimeout(timeout).SetTransport(otelhttp.NewTransport(http.DefaultTransport)),
@@ -50,6 +53,7 @@ type levelDTO struct {
 	Volume string `json:"volume"`
 }
 
+// GetOrderBook fetches the depth for the configured market, asks ascending and bids descending.
 func (c *Client) GetOrderBook(ctx context.Context) (domain.OrderBook, error) {
 	var body depthResponse
 

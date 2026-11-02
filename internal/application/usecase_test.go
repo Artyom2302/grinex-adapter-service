@@ -17,7 +17,7 @@ type fakeExchange struct {
 	calls int
 }
 
-func (f *fakeExchange) GetOrderBook(ctx context.Context) (domain.OrderBook, error) {
+func (f *fakeExchange) GetOrderBook(_ context.Context) (domain.OrderBook, error) {
 	f.calls++
 	return f.book, f.err
 }
@@ -27,7 +27,7 @@ type fakeRepo struct {
 	err   error
 }
 
-func (f *fakeRepo) Save(ctx context.Context, rate domain.Rate) error {
+func (f *fakeRepo) Save(_ context.Context, rate domain.Rate) error {
 	f.saved = append(f.saved, rate)
 	return f.err
 }
@@ -62,14 +62,14 @@ func TestRatesService_GetRates(t *testing.T) {
 	}{
 		{
 			name:          "unknown method skips exchange",
-			query:         GetRatesQuery{Method: domain.NO_SPECIFIED},
+			query:         GetRatesQuery{Method: domain.MethodUnspecified},
 			wantErr:       domain.ErrUnknownMethod,
 			wantExchCalls: 0,
 			wantSaved:     0,
 		},
 		{
 			name:          "top_n returns first level",
-			query:         GetRatesQuery{Method: domain.TOP_N, N: 1},
+			query:         GetRatesQuery{Method: domain.MethodTopN, N: 1},
 			wantAsk:       decimal.NewFromInt(101),
 			wantBid:       decimal.NewFromInt(99),
 			wantExchCalls: 1,
@@ -77,7 +77,7 @@ func TestRatesService_GetRates(t *testing.T) {
 		},
 		{
 			name:          "avg_nm averages range",
-			query:         GetRatesQuery{Method: domain.AVG_NM, N: 1, M: 3},
+			query:         GetRatesQuery{Method: domain.MethodAvgNM, N: 1, M: 3},
 			wantAsk:       decimal.NewFromInt(102),
 			wantBid:       decimal.NewFromInt(98),
 			wantExchCalls: 1,
@@ -85,7 +85,7 @@ func TestRatesService_GetRates(t *testing.T) {
 		},
 		{
 			name:          "exchange error is wrapped, nothing saved",
-			query:         GetRatesQuery{Method: domain.TOP_N, N: 1},
+			query:         GetRatesQuery{Method: domain.MethodTopN, N: 1},
 			exchangeErr:   errExchange,
 			wantErr:       errExchange,
 			wantExchCalls: 1,
@@ -93,7 +93,7 @@ func TestRatesService_GetRates(t *testing.T) {
 		},
 		{
 			name:          "save error is returned",
-			query:         GetRatesQuery{Method: domain.TOP_N, N: 1},
+			query:         GetRatesQuery{Method: domain.MethodTopN, N: 1},
 			repoErr:       errDB,
 			wantErr:       errDB,
 			wantExchCalls: 1,
@@ -101,7 +101,7 @@ func TestRatesService_GetRates(t *testing.T) {
 		},
 		{
 			name:          "position out of range, nothing saved",
-			query:         GetRatesQuery{Method: domain.TOP_N, N: 10},
+			query:         GetRatesQuery{Method: domain.MethodTopN, N: 10},
 			wantErr:       domain.ErrOutOfRange,
 			wantExchCalls: 1,
 			wantSaved:     0,

@@ -1,3 +1,4 @@
+// Command app runs the gRPC rates service.
 package main
 
 import (
@@ -108,7 +109,8 @@ func run() error {
 	ratesv1.RegisterRatesServiceServer(grpcServer, grpcapi.NewGrpcHandler(svc, logger))
 	reflection.Register(grpcServer)
 
-	lis, err := net.Listen("tcp", cfg.GRPCAddr)
+	lc := net.ListenConfig{}
+	lis, err := lc.Listen(ctx, "tcp", cfg.GRPCAddr)
 	if err != nil {
 		return fmt.Errorf("listen %s: %w", cfg.GRPCAddr, err)
 	}

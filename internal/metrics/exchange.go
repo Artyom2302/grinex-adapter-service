@@ -10,15 +10,18 @@ import (
 
 var _ application.ExchangeClient = (*InstrumentedExchange)(nil)
 
+// InstrumentedExchange records metrics around an ExchangeClient.
 type InstrumentedExchange struct {
 	next application.ExchangeClient
 	m    *Metrics
 }
 
+// NewInstrumentedExchange wraps next with metrics.
 func NewInstrumentedExchange(next application.ExchangeClient, m *Metrics) *InstrumentedExchange {
 	return &InstrumentedExchange{next: next, m: m}
 }
 
+// GetOrderBook calls the wrapped client and records duration and result.
 func (e *InstrumentedExchange) GetOrderBook(ctx context.Context) (domain.OrderBook, error) {
 	start := time.Now()
 	book, err := e.next.GetOrderBook(ctx)

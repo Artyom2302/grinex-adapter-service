@@ -1,7 +1,9 @@
+// Package metrics defines Prometheus collectors for the service.
 package metrics
 
 import "github.com/prometheus/client_golang/prometheus"
 
+// Metrics groups the service collectors.
 type Metrics struct {
 	GRPCRequests     *prometheus.CounterVec
 	GRPCDuration     *prometheus.HistogramVec
@@ -9,6 +11,7 @@ type Metrics struct {
 	ExchangeDuration prometheus.Histogram
 }
 
+// New creates the collectors and registers them in reg.
 func New(reg prometheus.Registerer) *Metrics {
 	m := &Metrics{
 		GRPCRequests: prometheus.NewCounterVec(prometheus.CounterOpts{

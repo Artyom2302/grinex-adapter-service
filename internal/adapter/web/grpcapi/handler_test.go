@@ -23,7 +23,7 @@ type fakeRates struct {
 	got  application.GetRatesQuery
 }
 
-func (f *fakeRates) GetRates(ctx context.Context, q application.GetRatesQuery) (domain.Rate, error) {
+func (f *fakeRates) GetRates(_ context.Context, q application.GetRatesQuery) (domain.Rate, error) {
 	f.got = q
 	return f.rate, f.err
 }
@@ -83,12 +83,10 @@ func TestGrpcHandler_GetRates_OK(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-
-	want := application.GetRatesQuery{Method: domain.AVG_NM, N: 1, M: 3}
+	want := application.GetRatesQuery{Method: domain.MethodAvgNM, N: 1, M: 3}
 	if fake.got != want {
 		t.Errorf("query = %+v, want %+v", fake.got, want)
 	}
-
 
 	if resp.GetAsk() != 80.15 || resp.GetBid() != 80.05 {
 		t.Errorf("ask/bid = %v/%v, want 80.15/80.05", resp.GetAsk(), resp.GetBid())
@@ -100,10 +98,10 @@ func TestGrpcHandler_GetRates_OK(t *testing.T) {
 
 func TestToDomainMethod(t *testing.T) {
 	tests := map[ratesv1.CALCMETHOD]domain.CalcMethod{
-		ratesv1.CALCMETHOD_CALCMETHOD_UNSPECIFIED: domain.NO_SPECIFIED,
-		ratesv1.CALCMETHOD_CALCMETHOD_TOP_N:       domain.TOP_N,
-		ratesv1.CALCMETHOD_CALCMETHOD_AVG_NM:      domain.AVG_NM,
-		ratesv1.CALCMETHOD(99):                    domain.NO_SPECIFIED,
+		ratesv1.CALCMETHOD_CALCMETHOD_UNSPECIFIED: domain.MethodUnspecified,
+		ratesv1.CALCMETHOD_CALCMETHOD_TOP_N:       domain.MethodTopN,
+		ratesv1.CALCMETHOD_CALCMETHOD_AVG_NM:      domain.MethodAvgNM,
+		ratesv1.CALCMETHOD(99):                    domain.MethodUnspecified,
 	}
 	for in, want := range tests {
 		if got := toDomainMethod(in); got != want {

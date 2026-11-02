@@ -96,7 +96,7 @@ func TestClient_GetOrderBook_Errors(t *testing.T) {
 }
 
 func TestClient_GetOrderBook_Timeout(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		time.Sleep(200 * time.Millisecond)
 	}))
 	t.Cleanup(srv.Close)

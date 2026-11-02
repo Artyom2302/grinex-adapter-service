@@ -1,3 +1,4 @@
+// Package config loads service settings from env and flags.
 package config
 
 import (
@@ -8,6 +9,7 @@ import (
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
+// Config holds service settings.
 type Config struct {
 	GRPCAddr     string        `env:"GRPC_ADDR" env-default:":50051"`
 	DSN          string        `env:"DATABASE_DSN" env-default:"postgres://rates:rates@localhost:5432/rates?sslmode=disable"`
@@ -25,6 +27,7 @@ type GrinexConfig struct {
 	UseStub bool          `env:"GRINEX_USE_STUB" env-default:"false"`
 }
 
+// Load reads Config from defaults, env and args; flags override env.
 func Load(args []string) (Config, error) {
 	var cfg Config
 	if err := cleanenv.ReadEnv(&cfg); err != nil {

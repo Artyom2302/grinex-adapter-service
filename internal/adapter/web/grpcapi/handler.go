@@ -1,3 +1,4 @@
+// Package grpcapi exposes the rates use case over gRPC.
 package grpcapi
 
 import (
@@ -15,20 +16,24 @@ import (
 
 var _ ratesv1.RatesServiceServer = (*GrpcHandler)(nil)
 
+// RatesGetter is the use case the gRPC handler depends on.
 type RatesGetter interface {
 	GetRates(ctx context.Context, q application.GetRatesQuery) (domain.Rate, error)
 }
 
+// GrpcHandler implements ratesv1.RatesServiceServer.
 type GrpcHandler struct {
 	ratesv1.UnimplementedRatesServiceServer
 	rates  RatesGetter
 	logger *zap.Logger
 }
 
+// NewGrpcHandler creates a GrpcHandler.
 func NewGrpcHandler(rates RatesGetter, logger *zap.Logger) *GrpcHandler {
 	return &GrpcHandler{rates: rates, logger: logger}
 }
 
+// GetRates calculates ask/bid for the requested method and maps errors to gRPC codes.
 func (h *GrpcHandler) GetRates(ctx context.Context, req *ratesv1.GetRatesRequest) (*ratesv1.GetRatesResponse, error) {
 	rate, err := h.rates.GetRates(ctx, application.GetRatesQuery{
 		Method: toDomainMethod(req.GetCalcMethod()),
@@ -50,11 +55,11 @@ func (h *GrpcHandler) GetRates(ctx context.Context, req *ratesv1.GetRatesRequest
 func toDomainMethod(m ratesv1.CALCMETHOD) domain.CalcMethod {
 	switch m {
 	case ratesv1.CALCMETHOD_CALCMETHOD_AVG_NM:
-		return domain.AVG_NM
+		return domain.MethodAvgNM
 	case ratesv1.CALCMETHOD_CALCMETHOD_TOP_N:
-		return domain.TOP_N
+		return domain.MethodTopN
 	default:
-		return domain.NO_SPECIFIED
+		return domain.MethodUnspecified
 	}
 }
 
