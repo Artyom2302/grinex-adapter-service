@@ -26,7 +26,7 @@ type GrpcHandler struct {
 }
 
 func NewGrpcHandler(rates RatesGetter, logger *zap.Logger) *GrpcHandler {
-	return &GrpcHandler{rates: rates}
+	return &GrpcHandler{rates: rates, logger: logger}
 }
 
 func (h *GrpcHandler) GetRates(ctx context.Context, req *ratesv1.GetRatesRequest) (*ratesv1.GetRatesResponse, error) {

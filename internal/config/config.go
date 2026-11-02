@@ -9,10 +9,11 @@ import (
 )
 
 type Config struct {
-	GRPCAddr   string        `env:"GRPC_ADDR" env-default:":50051"`
-	DSN        string        `env:"DATABASE_DSN" env-default:"postgres://rates:rates@localhost:5432/rates?sslmode=disable"`
-	AppTimeout time.Duration `env:"APP_TIMEOUT" env-default:"10s"`
-	Grinex     GrinexConfig
+	GRPCAddr     string        `env:"GRPC_ADDR" env-default:":50051"`
+	DSN          string        `env:"DATABASE_DSN" env-default:"postgres://rates:rates@localhost:5432/rates?sslmode=disable"`
+	AppTimeout   time.Duration `env:"APP_TIMEOUT" env-default:"10s"`
+	Grinex       GrinexConfig
+	OTLPEndpoint string `env:"OTEL_EXPORTER_OTLP_ENDPOINT" env-default:"localhost:4317"`
 }
 
 // GrinexConfig holds exchange client settings.

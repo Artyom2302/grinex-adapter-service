@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"slices"
 	"strings"
 	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/shopspring/decimal"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"grinex-adapter-service/internal/application"
 	"grinex-adapter-service/internal/domain"
@@ -32,7 +34,7 @@ type Client struct {
 
 func NewClient(baseURL, market string, timeout time.Duration) *Client {
 	return &Client{
-		http:   resty.New().SetBaseURL(baseURL).SetTimeout(timeout),
+		http:   resty.New().SetBaseURL(baseURL).SetTimeout(timeout).SetTransport(otelhttp.NewTransport(http.DefaultTransport)),
 		market: market,
 	}
 }

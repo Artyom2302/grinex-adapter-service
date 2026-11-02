@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"grinex-adapter-service/internal/telemetry"
 	"log"
 	"net"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
@@ -45,6 +47,18 @@ func run() error {
 		return fmt.Errorf("config: %w", err)
 	}
 
+	shutdownTracer, err := telemetry.InitTracer(ctx, "grinex-adapter-service", cfg.OTLPEndpoint)
+	if err != nil {
+		return fmt.Errorf("init tracer: %w", err)
+	}
+	defer func() {
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := shutdownTracer(shutdownCtx); err != nil {
+			logger.Warn("tracer shutdown failed", zap.Error(err))
+		}
+	}()
+
 	pool, err := postgres.NewPool(ctx, cfg.DSN)
 	if err != nil {
 		return fmt.Errorf("connect to postgres: %w", err)
@@ -68,7 +82,10 @@ func run() error {
 	repo := postgres.NewRatesRepository(pool)
 	svc := application.NewRatesService(exchange, repo, time.Now)
 
-	grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(grpcapi.LoggingInterceptor(logger)))
+	grpcServer := grpc.NewServer(
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
+		grpc.ChainUnaryInterceptor(grpcapi.LoggingInterceptor(logger)),
+	)
 	healthcheck := health.NewServer()
 	healthgrpc.RegisterHealthServer(grpcServer, healthcheck)
 	ratesv1.RegisterRatesServiceServer(grpcServer, grpcapi.NewGrpcHandler(svc, logger))
