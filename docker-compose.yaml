@@ -19,5 +19,24 @@ services:
     ports:
       - "16686:16686"
       - "4317:4317"
+  app:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+      jaeger:
+        condition: service_started
+    environment:
+      DATABASE_DSN: postgres://rates:rates@postgres:5432/rates?sslmode=disable
+      OTEL_EXPORTER_OTLP_ENDPOINT: jaeger:4317
+      GRINEX_USE_STUB: "true"
+    ports:
+      - "50051:50051"
+      - "9090:9090"
+    healthcheck:
+      test: ["CMD", "/bin/grpc_health_probe", "-addr=localhost:50051"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 volumes:
   data:
